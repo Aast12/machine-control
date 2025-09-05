@@ -1,3 +1,4 @@
+from time import time
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -5,49 +6,61 @@ from contextlib import asynccontextmanager
 import logging
 import os
 
-from app.core import ControlManager, MissingPayloadKeys, BadState, MachineState
+from app.core import ControlManager, MachineState
+from app.core.messages import ErrorMessage
+from app.core.temperature import fetch_temperature_sensor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-origin = "http://localhost:3000"
-API_KEY = os.environ.get("WEATHER_API_KEY")
-
+ORIGIN = "http://localhost:3000"
+WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY")
+TEMPERATURE_UPDATE_INTERVAL = 15  # seconds
+INITIAL_MACHINE_STATE = MachineState(
+    motor_speed=0.0, valve_state=False, temperature=0.0
+)
 
 control_manager: ControlManager | None = None
 
 
+async def initialize_state(api_key: str) -> MachineState:
+    current_temp = await fetch_temperature_sensor(api_key)
+    initial_state = MachineState(**INITIAL_MACHINE_STATE)
+    initial_state["temperature"] = current_temp
+
+    return initial_state
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Initializes machine state and startes periodic temperature updates."""
     global control_manager
+
     logging.info("Starting up...")
 
-    if not API_KEY:
+    if WEATHER_API_KEY is None or WEATHER_API_KEY.strip() == "":
         raise RuntimeError("WEATHER_API_KEY environment variable not set")
 
-    initial_state = MachineState()
-    control_manager = ControlManager(initial_state, API_KEY)
+    api_key = WEATHER_API_KEY.strip()
+
+    initial_state = await initialize_state(api_key)
+    control_manager = ControlManager(initial_state)
     scheduler = AsyncIOScheduler()
 
     async def periodic_update():
+        """Fetch temperature and update state periodically (every TEMPERATURE_UPDATE_INTERVAL seconds)."""
         if control_manager is None:
             logging.error("ControlManager not initialized in periodic update")
             return
 
         cm: ControlManager = control_manager
-        new_temp = await cm.fetch_temperature_sensor()
+        new_temp = await fetch_temperature_sensor(api_key)
         logging.info(f"Fetched new temperature: {new_temp}")
 
-        new_state = MachineState(
-            motor_speed=cm.state.motor_speed,
-            valve_state=cm.state.valve_state,
-            temperature=new_temp,
-        )
+        await cm.update_temperature(new_temp)
 
-        await cm.update(new_state)
-
-    scheduler.add_job(periodic_update, "interval", seconds=6 * 5)
+    scheduler.add_job(periodic_update, "interval", seconds=TEMPERATURE_UPDATE_INTERVAL)
     scheduler.start()
     yield
     scheduler.shutdown()
@@ -57,7 +70,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin],
+    allow_origins=[ORIGIN],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,29 +87,16 @@ async def websocket_endpoint(websocket: WebSocket):
     if control_manager is None:
         raise RuntimeError("ControlManager not initialized")
 
-    try:
-        await control_manager.connect(websocket)
-    except Exception as e:
-        print("WebSocket connection error:", e)
-        return
+    await control_manager.connect(websocket)
 
     while True:
         try:
-            data = await websocket.receive_json()
-
-            try:
-                original_state, new_state = control_manager.parse_update_request(data)
-            except (MissingPayloadKeys, BadState) as e:
-                await websocket.send_text(f"Error: {e}")
-                continue
-
-            print("Received state update request:", original_state, new_state)
-            # todo: mismatch original state
-            await control_manager.update(new_state)
+            await control_manager.process_message(websocket)
         except WebSocketDisconnect as e:
-            print("WebSocket disconnected:", e)
+            logger.info(f"WebSocket disconnected: {e}")
             await control_manager.disconnect(websocket)
             break
         except Exception as e:
-            print(f"Error processing WebSocket message: {e}")
+            # await control_manager.disconnect(websocket)
+            logger.error(f"Error processing WebSocket message: {e}")
             break

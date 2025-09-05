@@ -1,17 +1,19 @@
-from dataclasses import dataclass
-from typing import Any
+import typing
 
 
-@dataclass
-class MachineState:
-    motor_speed: float = 0.0
-    valve_state: bool = False
-    temperature: float = 25.0
+class MachineState(typing.TypedDict):
+    motor_speed: float
+    valve_state: bool
+    temperature: float
 
 
-def is_json_valid_state(data: Any) -> MachineState | None:
+def is_json_valid_state(data: typing.Any) -> MachineState | None:
     try:
         state_data = MachineState(**data)
         return state_data
     except (TypeError, ValueError) as e:
         return None
+
+
+def is_valid_state(data: MachineState) -> bool:
+    return 0 <= data["motor_speed"] <= 100
