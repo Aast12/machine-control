@@ -53,7 +53,7 @@ If you prefer to run the services manually without Docker, follow these steps:
 4. **Run the backend server:**
 
    ```bash
-   uv run fastapi dev --port 8000 --host 0.0.0.0
+   uv run --env-file .env fastapi dev --port 8000 --host 0.0.0.0
    ```
 
    The backend will be available at `http://localhost:8000`
