@@ -7,7 +7,6 @@ import logging
 import os
 
 from app.core import ControlManager, MachineState
-from app.core.messages import ErrorMessage
 from app.core.temperature import fetch_temperature_sensor
 
 logging.basicConfig(level=logging.INFO)

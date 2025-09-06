@@ -31,16 +31,10 @@ class SendUpdateMessage:
     type: typing.Literal[MessageType.UPDATE_STATE] = MessageType.UPDATE_STATE
 
 
-OutMessage = SendUpdateMessage | ErrorMessage
-
-
 @dataclass
 class ReceiveUpdateMessage:
     type: typing.Literal[MessageType.UPDATE_STATE]
     data: ReceiveUpdateBody
-
-
-InMessage = ReceiveUpdateMessage
 
 
 def parse_receive_update(message: dict[str, typing.Any]) -> ReceiveUpdateMessage:

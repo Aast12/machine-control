@@ -1,13 +1,7 @@
-from typing import Any
-from fastapi import WebSocket
 import requests
 import logging
 
-
 import random
-
-from app.core.errors import BadState, MissingPayloadKeys
-from app.core.state import MachineState, is_json_valid_state
 
 logger = logging.getLogger(__name__)
 

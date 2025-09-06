@@ -5,7 +5,6 @@ from fastapi import WebSocket
 import logging
 
 
-from app.core.errors import BadState, MissingPayloadKeys
 from app.core.state import MachineState
 from app.core.messages import (
     ErrorMessage,
