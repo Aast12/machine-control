@@ -2,7 +2,7 @@ import "./App.css";
 import { useControl } from "@/hooks/useControl";
 import { ReadyState } from "react-use-websocket";
 import { Button } from "@/components/ui/button";
-import { UpdateWidget } from "@/components/widget";
+import { ControlWidget } from "@/components/widget";
 import { Slider } from "@/components/ui/slider";
 import { useEffect, useState } from "react";
 import Layout from "@/components/layout";
@@ -54,14 +54,15 @@ function App() {
   return (
     <Layout>
       <div className="flex md:flex-row flex-col gap-4">
-        <UpdateWidget
+        <ControlWidget
           name="Temperature"
+          subtitle={`Last updated: ${currentState.lastTempUpdate.toLocaleTimeString()}`}
           className="md:w-sm"
           value={`${currentState.temperature.toFixed(2)} °C`}
         >
           <div className="flex flex-col gap-4"></div>
-        </UpdateWidget>
-        <UpdateWidget
+        </ControlWidget>
+        <ControlWidget
           name="Valve Control"
           className="md:w-sm"
           value={currentState.valveState ? "Open" : "Closed"}
@@ -77,8 +78,8 @@ function App() {
           >
             {currentState.valveState ? "Close" : "Open"} valve
           </Button>
-        </UpdateWidget>
-        <UpdateWidget
+        </ControlWidget>
+        <ControlWidget
           name="Motor Control"
           className="md:w-sm"
           value={`${currentState.motorSpeed} RPM`}
@@ -106,7 +107,7 @@ function App() {
               Update speed to {motorSpeed} RPM
             </Button>
           </div>
-        </UpdateWidget>
+        </ControlWidget>
       </div>
     </Layout>
   );

@@ -1,15 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
-export function UpdateWidget({
+export function ControlWidget({
   children,
   name,
   value,
+  subtitle,
   className,
 }: {
   children: React.ReactNode;
   name: string;
   value: string | number | boolean;
+  subtitle?: string;
   className?: string;
 }) {
   return (
@@ -17,6 +18,11 @@ export function UpdateWidget({
       <CardHeader>
         <CardTitle>
           <h2 className="font-bold text-xl">{name}</h2>
+          {subtitle && (
+            <h3 className="text-sm font-normal text-muted-foreground">
+              {subtitle}
+            </h3>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col justify-between h-full">

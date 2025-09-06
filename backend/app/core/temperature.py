@@ -11,8 +11,8 @@ from app.core.state import MachineState, is_json_valid_state
 
 logger = logging.getLogger(__name__)
 
-LOCAL_LATITUDE = 25.747057669386194
-LOCAL_LONGITUDE = -100.43502377290577
+LOCAL_LATITUDE = 25.683367718378108
+LOCAL_LONGITUDE = -100.32335820290318
 WEATHER_API_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 

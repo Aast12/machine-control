@@ -70,13 +70,14 @@ class ControlManager:
         for connection in self.active_connections:
             await self._send_state(connection)
 
-    async def update_temperature(self, new_tremperature: float):
+    async def update_temperature(self, new_temperature: float):
         """
         Updates state and broadcasts to all connected clients.
         """
-        self.state["temperature"] = new_tremperature
-        self.last_temp_update = time.time()
+        # add noise for showcase purposes
+        self.state["temperature"] = new_temperature + random.random()
 
+        self.last_temp_update = time.time()
         await self._broadcast()
 
     async def update(self, new_state: MachineState):
@@ -86,8 +87,7 @@ class ControlManager:
         # client should not be able to change temperature directly
         current_temperature = self.state["temperature"]
         self.state = MachineState(**new_state)
-        # add noise for showcase purposes
-        self.state["temperature"] = current_temperature + random.random() * 0.1
+        self.state["temperature"] = current_temperature
 
         logger.info(f"State updated to: {self.state}")
         await self._broadcast()
